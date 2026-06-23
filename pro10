@@ -1,0 +1,88 @@
+# Install required libraries 
+!pip install langchain langchain_community cohere faiss-cpu pypdf 
+import langchain, cohere 
+print("LangChain Version:", langchain.__version__) 
+print("Cohere Version:", cohere.__version__) 
+!pip install langchain-cohere 
+from langchain.document_loaders import PyPDFLoader 
+from langchain.text_splitter import RecursiveCharacterTextSplitter 
+from langchain.vectorstores import FAISS 
+from langchain.chains import RetrievalQA 
+from langchain.embeddings import HuggingFaceEmbeddings 
+from langchain.llms import HuggingFacePipeline 
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline 
+import torch 
+# 
+✅
+ STEP 1: Load IPC PDF 
+pdf_path = "10th class english 2020-21 20.pdf"  # Ensure this file is 
+uploaded to Colab 
+loader = PyPDFLoader(pdf_path) 
+documents = loader.load() 
+# 
+✅
+ STEP 2: Split text into chunks 
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, 
+chunk_overlap=100) 
+texts = text_splitter.split_documents(documents) 
+# 
+✅
+ STEP 3: Use Free Hugging Face Embeddings 
+embeddings = 
+HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2") 
+# 
+✅
+ STEP 4: Store embeddings in FAISS Vector Database 
+vector_store = FAISS.from_documents(texts, embeddings) 
+# 
+✅
+ STEP 5: Load Falcon-7B-Instruct (with Quantization to Save Memory) 
+model_id = "tiiuae/falcon-7b-instruct" 
+tokenizer = AutoTokenizer.from_pretrained(model_id) 
+model = AutoModelForCausalLM.from_pretrained( 
+model_id, 
+torch_dtype=torch.float16,  # Efficient memory use 
+device_map="auto"  # Automatically assign GPU/CPU 
+) 
+print("
+✅
+ Falcon-7B Loaded Successfully!") 
+# 
+✅
+ STEP 6: Create Text Generation Pipeline 
+pipe = pipeline( 
+"text-generation", 
+model=model, 
+tokenizer=tokenizer, 
+torch_dtype=torch.float16, 
+device_map="auto", 
+max_new_tokens=512, 
+do_sample=True, 
+temperature=0.7, 
+) 
+# 
+✅
+ STEP 7: Create Retrieval-based QA System 
+llm = HuggingFacePipeline(pipeline=pipe) 
+qa_chain = RetrievalQA.from_chain_type(llm, 
+retriever=vector_store.as_retriever()) 
+print("Done all steps successfully") 
+# 
+✅
+ STEP 8: Chatbot Interaction 
+def chatbot(): 
+print("
+🔹
+ IPC Chatbot is ready! (Type 'exit' to stop)") 
+while True: 
+query = input("You: ") 
+if query.lower() == "exit": 
+print("Chatbot: Goodbye! 
+�
+�
+") 
+break 
+response = qa_chain.run(query) 
+print(f"Chatbot: {response}") 
+# Run the chatbot 
+chatbot()
