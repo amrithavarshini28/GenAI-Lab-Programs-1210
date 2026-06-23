@@ -1,0 +1,32 @@
+# Install and import libraries
+!pip install gensim scikit-learn matplotlib
+from gensim.downloader import load
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+# Load pre-trained GloVe model
+print("Loading model...")
+model = load("glove-wiki-gigaword-50")
+words = [
+    'football', 'basketball', 'soccer', 'tennis', 'cricket',
+    'hockey', 'volleyball', 'baseball', 'rugby', 'badminton'
+]
+def reduce_dim(vectors):
+    pca = PCA(n_components=2)
+    return pca.fit_transform(vectors)
+def visualize(words, coords):
+    plt.figure(figsize=(10,6))
+    for i, word in enumerate(words):
+        x, y = coords[i]
+        plt.scatter(x, y)
+        plt.text(x+0.02, y+0.02, word)
+    plt.title("Word Embedding Visualization (Sports Domain)")
+    plt.show()
+vectors = [model[word] for word in words]
+coords = reduce_dim(vectors)
+visualize(words, coords)
+def similar_words(word):
+    print("\n5 Similar Words for:", word)
+    results = model.most_similar(word, topn=5)
+    for w, score in results:
+        print(w, ":", score)
+similar_words("sports")
